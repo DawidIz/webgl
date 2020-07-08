@@ -9,18 +9,24 @@
 // }
 // `
 
-const vertexShaderSource = `
-attribute vec4 a_position;
+const vs = `
+attribute vec4 position;
+uniform mat4 projection;
+uniform mat4 modelView;
 
-void main() {
-  gl_Position = a_position;
+varying vec4 color;
+void main(){
+    gl_Position = projection * position;
+    color = gl_Position * vec4(1.0,1.0,1.0,1.0) + 0.5;
 }
 `
 
-const fragmentShaderSource = `
-//precision mediump float;
-void main() {
-  gl_FragColor = vec4(1.0, 0.2, 1.0, 1.0);
+const fs = `
+precision mediump float;
+varying vec4 color;
+void main(){
+    gl_FragColor = color;
 }
 `
-export { vertexShaderSource, fragmentShaderSource }
+
+export { vs, fs }
