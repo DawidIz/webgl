@@ -17,7 +17,7 @@ uniform mat4 modelView;
 varying vec4 color;
 void main(){
     gl_Position = projection * position;
-    color = gl_Position * vec4(1.0,1.0,1.0,1.0) + 0.5;
+    color = gl_Position * 0.8 + 0.5;
 }
 `
 
