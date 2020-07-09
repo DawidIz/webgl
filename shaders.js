@@ -1,13 +1,26 @@
-// const vertexShaderSource = `
-// attribute vec4 aVertexPosition;
+const vertexShaderSource = `
+attribute vec4 aVertexPosition;
+attribute vec4 aVertexColor;
 
-// uniform mat4 uModelViewMatrix;
-// uniform mat4 uProjectionMatrix;
+uniform mat4 uModelViewMatrix;
+uniform mat4 uProjectionMatrix;
 
-// void main() {
-//   gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-// }
-// `
+varying lowp vec4 vColor;
+
+void main(){
+    gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+    vColor = aVertexColor;
+}
+`
+const fragmentShaderSource = `
+    varying lowp vec4 vColor;
+
+    void main(){
+        gl_FragColor = vColor;
+    }
+`
+
+////////////////////////////////////////////////////////////////
 
 const vs = `
 attribute vec4 position;
@@ -17,7 +30,7 @@ uniform mat4 modelView;
 varying vec4 color;
 void main(){
     gl_Position = projection * position;
-    color = gl_Position * vec4(1.0,1.0,1.0,1.0) + 0.5;
+    color = gl_Position * 0.8 + 0.5;
 }
 `
 
@@ -29,4 +42,4 @@ void main(){
 }
 `
 
-export { vs, fs }
+export { vs, fs, vertexShaderSource, fragmentShaderSource }

@@ -30,7 +30,7 @@ const createShader = (gl, type, source) => {
     if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader
     else {
         gl.deleteShader(shader)
-        throw new Error('Can not create shader')
+        throw new Error(`Can not create shader: ${source}`)
     }
 }
 
