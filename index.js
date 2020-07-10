@@ -1,55 +1,117 @@
-import { defaultInit, createProgram } from './utils.js'
-import { vs, fs } from './shaders.js'
-import cube3 from './shapes.js'
+import { defaultInit, createProgram, clear } from './utils.js'
+import { vertexShaderSource, fragmentShaderSource } from './shaders.js'
+import mat4 from './mat4.js'
+import { cube3D } from './shapes.js'
+import { loadObjectBuffers, enableObjectBuffers } from './buffers.js'
+import { loadTexture } from './textures.js'
+
+let rotation = 0.0
+
+const objs = [
+    {
+        obj: null,
+        transition: null, //[0,0,0]
+        scale: null, // [0,0,0]
+        rotate: {
+            x: null, // [0,0,0],
+            y: null, // [0,0,0]
+            z: null, // [0,0,0]
+        },
+    },
+]
 
 // init and add to DOM default canvas then return webgl context
 const gl = defaultInit()
+//default settings
+gl.enable(gl.DEPTH_TEST)
+gl.depthFunc(gl.LEQUAL)
+// gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
-gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-// create program
-const program = createProgram(gl, vs, fs)
-// program variables
-const positionLocation = gl.getAttribLocation(program, 'position')
-const projectionLocation = gl.getUniformLocation(program, 'projection')
-const modelViewLocation = gl.getUniformLocation(program, 'modelView')
+const program = createProgram(gl, vertexShaderSource, fragmentShaderSource)
 
-gl.useProgram(program)
+const programInfo = {
+    program: program,
+    attr: {
+        vertexPosition: gl.getAttribLocation(program, 'aVertexPosition'),
+        vertexColor: gl.getAttribLocation(program, 'aVertexColor'),
+        texture: gl.getAttribLocation(program, 'aTextureCoord'),
+    },
+    uni: {
+        projectionMatrix: gl.getUniformLocation(program, 'uProjectionMatrix'),
+        modelViewMatrix: gl.getUniformLocation(program, 'uModelViewMatrix'),
+        sampler: gl.getUniformLocation(program, 'uSampler'),
+    },
+}
 
-gl.uniformMatrix4fv(projectionLocation, false, [
-    0.5,
-    0,
-    0,
-    0,
+const cube = loadObjectBuffers(gl, cube3D)
+const texture = loadTexture(gl, './texture.png')
+gl.activeTexture(gl.TEXTURE0)
+gl.bindTexture(gl.TEXTURE_2D, texture)
+gl.uniform1i(programInfo.uni.sampler, 0)
 
-    0,
-    0.5,
-    0,
-    0,
+enableObjectBuffers(gl, programInfo, cube)
 
-    0,
-    0,
-    0.5,
-    0,
+const setProjection = () => {
+    gl.useProgram(programInfo.program)
+    // perspective matrix
 
-    0,
-    0,
-    0,
-    1,
-])
+    const projectionMatrix = mat4.perspective(
+        mat4.create(),
+        (45 * Math.PI) / 180,
+        gl.canvas.clientWidth / gl.canvas.clientHeight,
+        0.1,
+        100.0
+    )
+    // mat4.rotate(projectionMatrix, projectionMatrix, 0.2, [0, 1, 0])
 
-// create buffer with example verticles
-const positionBuffer = gl.createBuffer()
+    // prettier-ignore
+    gl.uniformMatrix4fv(programInfo.uni.projectionMatrix,false,projectionMatrix)
+}
+setProjection()
 
-const cube = new Float32Array([-1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0])
-const triangle = new Float32Array([0, 0, 0, 0.2, 0.7, 0])
+const drawScene = () => {
+    clear(gl)
+    gl.useProgram(programInfo.program)
 
-gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-gl.bufferData(gl.ARRAY_BUFFER, cube, gl.STATIC_DRAW)
+    // modelView matrix
+    const modelViewMatrix = mat4.create()
 
-// draw
-//select buffer
-gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-gl.enableVertexAttribArray(positionLocation)
-gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
-// gl.useProgram(program)
-gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+    mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 0.0, -10.0])
+    // mat4.rotate(modelViewMatrix, modelViewMatrix, rotation, [0, 0, 1])
+    // mat4.rotate(modelViewMatrix, modelViewMatrix, rotation, [0, 1, 0])
+
+    //copy reference matrix
+
+    const worldMatrix = [...modelViewMatrix]
+    // mat4.scale(modelViewMatrix, modelViewMatrix, [1, 2, 1])
+    // console.log(worldMatrix)
+
+    gl.uniformMatrix4fv(programInfo.uni.modelViewMatrix, false, modelViewMatrix)
+    gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0)
+    /////////////////////////////////////////////////////////////////
+
+    mat4.translate(modelViewMatrix, worldMatrix, [4, 0.0, 0.0])
+    mat4.rotate(modelViewMatrix, modelViewMatrix, rotation * 2, [0, 1, 0])
+    gl.uniformMatrix4fv(programInfo.uni.modelViewMatrix, false, modelViewMatrix)
+    gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0)
+
+    mat4.translate(modelViewMatrix, worldMatrix, [-4, 0.0, 0.0])
+    mat4.rotate(modelViewMatrix, modelViewMatrix, rotation * 4, [0, 1, 0])
+    gl.uniformMatrix4fv(programInfo.uni.modelViewMatrix, false, modelViewMatrix)
+    gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0)
+}
+
+let prev = 0
+const animate = timestamp => {
+    timestamp *= 0.001
+    const dt = timestamp - prev
+    prev = timestamp
+
+    rotation += dt
+
+    // drawScene(gl, programInfo, initBuffers(gl))
+    drawScene()
+    // console.log(`timestamp: ${timestamp * 0.001}\ndt: ${dt}\nprev: ${prev}`)
+    requestAnimationFrame(animate)
+}
+requestAnimationFrame(animate)

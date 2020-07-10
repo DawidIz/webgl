@@ -1,3 +1,6 @@
+const isEven = value => (value & 1) == 0
+const isPowerOf2 = value => (value & (value - 1)) == 0
+
 const canvas = (width = 800, height = 600) => {
     const canvas = document.createElement('canvas')
     canvas.width = width
@@ -30,7 +33,7 @@ const createShader = (gl, type, source) => {
     if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader
     else {
         gl.deleteShader(shader)
-        throw new Error('Can not create shader')
+        throw new Error(`Can not create shader: ${source}`)
     }
 }
 
@@ -56,4 +59,20 @@ const createProgram = (gl, vertexShaderSource, fragmentShaderSource) => {
     }
 }
 
-export { defaultInit, createShader, createProgram, canvas, webgl, append }
+const clear = gl => {
+    gl.clearColor(0.0, 0.0, 0.0, 1.0)
+    gl.clearDepth(1.0)
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+}
+
+export {
+    isEven,
+    isPowerOf2,
+    clear,
+    defaultInit,
+    createShader,
+    createProgram,
+    canvas,
+    webgl,
+    append,
+}
